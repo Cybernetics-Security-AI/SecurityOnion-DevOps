@@ -27,3 +27,6 @@ snort -c /etc/nsm/"sensor interface name"/snort.conf -T
 I have made a bash script to automate this process
 Note: It will only work after a fresh install
 file name is "sosensorfix"
+
+Let me know if you think I'm missing something I'll check it out
+Hope this helps anyone with this issue.
