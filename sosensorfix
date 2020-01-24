@@ -1,11 +1,11 @@
 #!/bin/bash
 
 ########################################################################
-#								                                        #
+#								                                                       #
 #    BashScript to fix snort.conf file in sniffing interface folder    #
-#								                                    #
-#								                                    #
-#                       BY SELF, JONATHAN 			           #
+#								                                                       #
+#								                                                       #
+#                       BY SELF, JONATHAN 			                       #
 #######################################################################
 #USE CASE #THIS IS TO FIX THE SNORT.CONF FILE OF A FRESH INSTALL IF AFTER RUNNNG SNORT -C "SNORT.CON F OF SNIFFING INTERFACE" -T YOU RECEIVE ANY ERRORS
 
