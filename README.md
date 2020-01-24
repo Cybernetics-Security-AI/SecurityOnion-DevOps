@@ -23,3 +23,7 @@ mkdir snort
 
 With these changes your Security Onion Sensor should be working great and pass the pre checks
 snort -c /etc/nsm/"sensor interface name"/snort.conf -T
+
+I have made a bash script to automate this process
+Note: It will only work after a fresh install
+file name is "sensorfix"
