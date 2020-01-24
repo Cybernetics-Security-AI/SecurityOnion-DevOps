@@ -1,0 +1,48 @@
+#!/bin/bash
+
+########################################################################
+#								                                                       #
+#    BashScript to fix snort.conf file in sniffing interface folder    #
+#								                                                       #
+#								                                                       #
+#                       BY SELF, JONATHAN 			                       #
+#######################################################################
+#USE CASE #THIS IS TO FIX THE SNORT.CONF FILE OF A FRESH INSTALL IF AFTER RUNNNG SNORT -C "SNORT.CON F OF SNIFFING INTERFACE" -T YOU RECEIVE ANY ERRORS
+
+#Make sure to run chmod u+x on sensorfix file
+#Make sure to cp sosensorfix file(this script) to your "/etc/nsm/sensor interface name/" directory and run it there
+
+
+#Original File Conifiguration
+
+#This stops the netsniff-ng service of sniffing interface
+so-sensor-stop
+
+#config daq: pfring
+#config daq_dir: /opt/pfring/lib/daq
+#config daq_var: clusterid="random number"
+#config daq_var: clustermode=4
+
+#Intended File Configuration
+#config daq: pcap
+#config daq_dir: /usr/include
+#config daq_var: clusterid="random number"
+#config daq_mode: passive
+
+#Command to fix config daq:
+sed -i snort.conf -e "s/config daq: pfring/config daq: pcap/"
+
+#Command to fix config daq_dir:
+sed -i snort.conf -e "s|config daq_dir: /opt/pfring/lib/daq|config daq_dir: /usr/include|"
+
+#Command to fix config daq_mode
+sed -i snort.conf -e "s/config daq_var: clustermode=4/config daq_mode: passive/"
+
+#Makes directory for snort logs directory if missing directory
+mkdir -p "/var/log/snort/"
+
+#This starts the netsniff-ng service of sniffing interface 
+so-sensor-start
+
+#Runs snort debugger check to ensure snort.conf file has no errors
+snort -c snort.conf -T
