@@ -1,6 +1,6 @@
 # SecurityOnion-DevOps
 
-This script was made because in my personal use of utilizing Security Onion, I run into a problem where the snort.conf file in the /etc/nsm/"sensor name"/ directory fails to pass the snort -c /etc/nsm/"sensor interface name"/snort.conf -T debugging test. I receive a few errors running this test after a fresh install of security onion. These errors include; can't find directory to store snort logs, and can't intialize daq pfring.
+The sosensorfix script was made because in my personal use of utilizing Security Onion, I run into a problem where the snort.conf file in the /etc/nsm/"sensor name"/ directory fails to pass the snort -c /etc/nsm/"sensor interface name"/snort.conf -T debugging test. I receive a few errors running this test after a fresh install of security onion. These errors include; can't find directory to store snort logs, and can't intialize daq pfring.
 
 After some troubleshooting of the snort.conf file on the sniffing interface directory, I came up with a solution that works.
 
@@ -26,4 +26,4 @@ snort -c /etc/nsm/"sensor interface name"/snort.conf -T
 
 I have made a bash script to automate this process
 Note: It will only work after a fresh install
-file name is "sensorfix"
+file name is "sosensorfix"
