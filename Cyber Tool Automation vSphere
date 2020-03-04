@@ -1096,6 +1096,7 @@ $Sniffing.vSwitch = Read-Host "Enter what you would like you vSwitch name to be.
 $Sniffing.vlans = Read-Host "Enter what you would like you Virtual Port Group Vlan to be."
 Function Finalize-Net-Sniffing(){
 New-VirtualPortGroup -Name $Sniffing.pGroup -VirtualSwitch $Sniffing.vSwitch -VLanId $Sniffing.vlans -Confirm:$false
+Get-VirtualPortGroup -Name $Sniffing.pGroup | Get-SecurityPolicy | Set-SecurityPolicy -AllowPromiscuous:$true
 }
 Function ReChoose-Sniffing-Variable(){
 $answer = Read-Host -Prompt "Do you agree with the following configurations?"
