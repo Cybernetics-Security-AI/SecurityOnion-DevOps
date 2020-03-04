@@ -1,0 +1,1151 @@
+<#
+
+
+Description: Powershell script to automate the build of common Cyber Security Defense tools.
+Creator:Jonathan Self
+Verison: 1.0.1
+Date: 2020-02-14
+
+
+#>
+#MAIN PAGE
+cd 'C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\'
+
+Start CLI Enviroment
+.\Initialize-PowerCLIEnvironment.ps1
+Connect-VIServer
+#mkdir cybertoolinstall -Force
+
+#cp 'C:\Windows\cybertoolinstall\' 'C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\' -Force | Out-Null
+
+#cd 'C:\Program Files (x86)\VMware\Infrastructure\vSphere PowerCLI\Scripts\cybertoolinstall\securityonion'
+$MainMenu = [Ordered]@{
+    
+    1 = 'Press to Create-Network-Resource'
+    2 = 'Press to Create-SO-Master'
+    3 = 'Press to Create-SO-Sensor'
+    4 = 'Press to Create-SO-StandAlone'
+    5 = 'Press to Create-VM-EPO'
+    6 = 'Press to Create-VM-ESM'
+    7 = 'Press to Create-VM-Acas'
+    8 = 'Press to Create-New-vSwitch'
+    9 = 'Press to Create-Net-Private'
+    10 = 'Press to Create-Net-Public'
+    11 = 'Press to Create-Net-Management'
+    12 = 'Press to Create-Net-Sniffing'
+    13 = 'Press to Create-Net-Honey'
+    14 = 'Exit the Program'
+
+}
+
+<#
+
+
+#>
+
+Function Get-MainPage(){
+   $Results = $MainMenu | Out-GridView -PassThru -Title 'Welcome to the Automating Cyber Security Defense Tools Program'
+Switch ($Results){
+    {$Results.Name -eq 1}{Create-Network-Resource}
+    {$Results.Name -eq 2}{Create-SO-Master}
+    {$Results.Name -eq 3}{Create-SO-Sensor}
+    {$Results.Name -eq 4}{Create-SO-StandAlone}
+    {$Results.Name -eq 5}{Write-Host "Sorry this is currently underdevelopment. Press Enter to return to MainPage" | pause |  Get-MainPage}
+    {$Results.Name -eq 6}{Write-Host "Sorry this is currently underdevelopment. Press Enter to return to MainPage" | pause |  Get-MainPage}
+    {$Results.Name -eq 7}{Write-Host "Sorry this is currently underdevelopment. Press Enter to return to MainPage" | pause |  Get-MainPage}
+    {$Results.Name -eq 8}{Create-New-vSwitch}
+    {$Results.Name -eq 9}{Create-Net-Private}
+    {$Results.Name -eq 10}{Create-Net-Public}
+    {$Results.Name -eq 11}{Create-Net-Management}
+    {$Results.Name -eq 12}{Create-Net-Sniffing}
+    {$Results.Name -eq 13}{Create-Net-Honey}
+    {$Results.Name -eq 14}{Exit}
+} 
+
+
+
+
+}
+
+<#
+
+
+
+
+
+
+#>
+
+Function Get-AllSecurityToolConfigurations(){
+    [imagereq]$som
+    [imagereq]$sos
+    [imagereq]$soms
+    [imagereq]$acas
+    [imagereq]$esm
+    [imagereq]$epo
+    [imagereq]$spl
+    
+    pause
+    Get-MainPage
+
+}
+
+<#
+
+
+
+
+
+
+
+
+#>
+
+class imagereq{
+[ValidateSet(4,8,12,16,20,24,32)]
+[int]$vcpu
+[ValidateSet(4,8,12,16,20,24,32)]
+[int]$mem
+[ValidateSet(50,100,500,1000,2000,5000,10000)]
+[int]$disk
+[string]$toolName
+[string]$netName
+[string]$netName2
+[string]$ds
+[string]$isoPaths
+}
+
+<#
+
+
+#>
+$SOM = [imagereq]::new()
+$SOS = [imagereq]::new()
+$ESM = [imagereq]::new()
+$ACAS = [imagereq]::new()
+$EPO = [imagereq]::new()
+$SOMS = [imagereq]::new()
+$SPL = [imagereq]::new()
+
+<#
+
+
+
+#>
+
+class NetSettings {
+[string]$vSwitch
+[string]$pNic
+[string]$pGroup
+[int]$vlans
+[string]$name
+
+}
+
+$sniffing = [NetSettings]::new()
+$Management = [NetSettings]::new()
+$Public = [NetSettings]::new()
+$private = [NetSettings]::new()
+$honey = [NetSettings]::new()
+$vSwitch = [NetSettings]::New()
+
+<#
+
+#>
+
+Function Create-SO-Master(){
+
+
+#Choose Name of Security Onion Master and Choose Variables
+$SOM.toolName = Read-Host -Prompt 'Input Name for Security Onion Master'
+
+#Select Datastore
+Get-Datastore | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter after you have read the available list of Datastores."
+
+pause
+
+$SOM.ds = Read-Host -Prompt 'Input Desired datastore name for master'
+
+#Set SOMDiskDrive Variable
+Write-Host "Please select one of the following disk space sizes in GB"
+Write-Host "1: Press '1' for selection of 50GB of disk space"
+Write-Host "2: Press '2' for selection of 100GB of disk space"
+Write-Host "3: Press '3' for selection of 500GB of disk space"
+Write-Host "4: Press '4' for selection of 1000GB of disk space"
+Write-Host "5: Press '5' for selection of 2000GB of disk space"
+Write-Host "6: Press '6' for selection of 5000GB of disk space"
+Write-Host "7: Press '7' for selection of 10000GB of disk space"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+
+do {
+ 
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Make a Disk Size Selection for Security Onion Master"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOM.disk = 50
+                }
+                '2'{
+                    $SOM.disk = 100
+                }
+                '3'{
+                    $SOM.disk = 500
+                }
+                '4'{
+                    $SOM.disk = 1000
+                }
+                '5'{
+                    $SOM.disk = 2000
+                }
+                '6'{
+                    $SOM.disk = 5000
+                }
+                '7'{
+                    $SOM.disk = 10000
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+
+        pause    
+    }
+    until($selection)
+
+Clear-Host
+
+#$SOMNumCpu = Read-Host -Prompt 'Input Desired CPUs for master Example 4'       
+Write-Host "Please select one of the following to choose how much CPU's you want."
+Write-Host "1: Press '1' for selection of 4 cpus"
+Write-Host "2: Press '2' for selection of 8 cpus"
+Write-Host "3: Press '3' for selection of 12 cpus"
+Write-Host "4: Press '4' for selection of 16 cpus"
+Write-Host "5: Press '5' for selection of 20 cpus"
+Write-Host "6: Press '6' for selection of 24 cpus"
+Write-Host "7: Press '7' for selection of 32 cpus"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+do {
+    
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Please CPU Size Selection"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOM.vcpu = 4
+                }
+                '2'{
+                    $SOM.vcpu = 8
+                }
+                '3'{
+                    $SOM.vcpu = 12
+                }
+                '4'{
+                    $SOM.vcpu = 16
+                }
+                '5'{
+                    $SOM.vcpu = 20
+                }
+                '6'{
+                    $SOM.vcpu = 24
+                }
+                '7'{
+                    $SOM.vcpu = 32
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+        
+     
+        pause    
+    }
+    until($selection)
+
+Clear-Host
+
+#Select Memory Space
+Write-Host "Please select one of the following memory space sizes in GB"
+Write-Host "1: Press '1' for selection of 4GB of memory space"
+Write-Host "2: Press '2' for selection of 8GB of memory space"
+Write-Host "3: Press '3' for selection of 12GB of memory space"
+Write-Host "4: Press '4' for selection of 16GB of memory space"
+Write-Host "5: Press '5' for selection of 20GB of memory space"
+Write-Host "6: Press '6' for selection of 24GB of memory space"
+Write-Host "7: Press '7' for selection of 32GB of memory space"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+do {
+    
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Please Make a Memory Size Selection in GB"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOM.mem = 4
+                }
+                '2'{
+                    $SOM.mem = 8
+                }
+                '3'{
+                    $SOM.mem = 12
+                }
+                '4'{
+                    $SOM.mem = 16
+                }
+                '5'{
+                    $SOM.mem = 20
+                }
+                '6'{
+                    $SOM.mem = 24
+                }
+                '7'{
+                    $SOM.mem = 32
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+        
+     
+        pause    
+    }
+    until($selection)    
+
+Clear-Host
+
+#'Input Desired Network Name for public access'
+
+Get-VirtualPortGroup | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter only after you have read the list of aviable Network Names"
+
+pause
+
+Write-Host "Please type in one of the following Network Names
+Note: If spelling is wrong VM will not connect properly"
+
+$SOM.netName = Read-Host -Prompt 'Input Desired Network Name for public access'
+
+#'Input Private Network Name (Communication Between Master and Sensor)'
+
+Get-VirtualPortGroup | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter only after you have read the list of aviable Network Names"
+
+pause
+
+Write-Host "Please type in one of the following Network Names
+Note: If spelling is wrong VM will not connect properly"
+
+$SOM.netName2 = Read-Host -Prompt 'Input Private Network Name (Communication Between Master and Sensor)'
+
+#'Input Desired IsoPath Example [datastore1]securityonion.iso'
+
+Get-Datastore | Sort-Object NAME | Select Name | Out-Host
+pause
+
+Write-Host "Please type in iso path. Example,["datastore name"]"iso name""
+
+$SOM.isoPaths = Read-Host -Prompt 'Input Desired IsoPath Example [datastore1]securityonion.iso'
+
+
+Write-Host 'You choose the names of '$SOM.toolName''
+Write-Host 'Watch Closely for Configuration Changes'
+Pause 5
+
+function Configuration-SO-Master(){
+    [imagereq]$SOM
+}
+
+#Create VM for Security Onion Master
+function Finalize-SO-Master(){
+New-VM -Name $SOM.toolName -Datastore $SOM.ds -DiskGB $SOM.disk -MemoryGB $SOM.mem -NumCpu $SOM.vcpu -NetworkName $SOM.netName
+
+#Attached CDDrive to SOM with Security Onion Image
+New-CDDrive -VM $SOM.toolName -IsoPath $SOM.isoPaths -StartConnected:$true -Confirm:$false
+
+#Attach 2nd Network Adapter
+New-NetworkAdapter -VM $SOM.toolName -NetworkName $SOM.netName2 -StartConnected:$true -Confirm:$false
+
+#Power On SOM
+Start-VM $SOM.toolName
+}
+
+function ReChoose-SO-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-SO-Master
+        pause
+        Write-Host "Security Onion Master build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-SO-Master
+    }
+
+    }
+
+
+Configuration-SO-Master
+pause
+
+ReChoose-SO-Variable
+
+}
+
+<#
+
+
+
+#>
+
+Function Create-SO-Sensor(){
+
+
+#Choose Name of Security Onion Master and Choose Variables
+$SOS.toolName = Read-Host -Prompt 'Input Name for Security Onion Master'
+
+#Select Datastore
+Get-Datastore | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter after you have read the available list of Datastores."
+
+pause
+
+$SOS.ds = Read-Host -Prompt 'Input Desired datastore name for master'
+
+#Set SOSDiskDrive Variable
+Write-Host "Please select one of the following disk space sizes in GB"
+Write-Host "1: Press '1' for selection of 50GB of disk space"
+Write-Host "2: Press '2' for selection of 100GB of disk space"
+Write-Host "3: Press '3' for selection of 500GB of disk space"
+Write-Host "4: Press '4' for selection of 1000GB of disk space"
+Write-Host "5: Press '5' for selection of 2000GB of disk space"
+Write-Host "6: Press '6' for selection of 5000GB of disk space"
+Write-Host "7: Press '7' for selection of 10000GB of disk space"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+
+do {
+ 
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Make a Disk Size Selection for Security Onion Master"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOS.disk = 50
+                }
+                '2'{
+                    $SOS.disk = 100
+                }
+                '3'{
+                    $SOS.disk = 500
+                }
+                '4'{
+                    $SOS.disk = 1000
+                }
+                '5'{
+                    $SOS.disk = 2000
+                }
+                '6'{
+                    $SOS.disk = 5000
+                }
+                '7'{
+                    $SOS.disk = 10000
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+
+        pause    
+    }
+    until($selection)
+
+Clear-Host
+
+#$SOSNumCpu = Read-Host -Prompt 'Input Desired CPUs for master Example 4'       
+Write-Host "Please select one of the following to choose how much CPU's you want."
+Write-Host "1: Press '1' for selection of 4 cpus"
+Write-Host "2: Press '2' for selection of 8 cpus"
+Write-Host "3: Press '3' for selection of 12 cpus"
+Write-Host "4: Press '4' for selection of 16 cpus"
+Write-Host "5: Press '5' for selection of 20 cpus"
+Write-Host "6: Press '6' for selection of 24 cpus"
+Write-Host "7: Press '7' for selection of 32 cpus"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+do {
+    
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Please CPU Size Selection"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOS.vcpu = 4
+                }
+                '2'{
+                    $SOS.vcpu = 8
+                }
+                '3'{
+                    $SOS.vcpu = 12
+                }
+                '4'{
+                    $SOS.vcpu = 16
+                }
+                '5'{
+                    $SOS.vcpu = 20
+                }
+                '6'{
+                    $SOS.vcpu = 24
+                }
+                '7'{
+                    $SOS.vcpu = 32
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+        
+     
+        pause    
+    }
+    until($selection)
+
+Clear-Host
+
+#Select Memory Space
+Write-Host "Please select one of the following memory space sizes in GB"
+Write-Host "1: Press '1' for selection of 4GB of memory space"
+Write-Host "2: Press '2' for selection of 8GB of memory space"
+Write-Host "3: Press '3' for selection of 12GB of memory space"
+Write-Host "4: Press '4' for selection of 16GB of memory space"
+Write-Host "5: Press '5' for selection of 20GB of memory space"
+Write-Host "6: Press '6' for selection of 24GB of memory space"
+Write-Host "7: Press '7' for selection of 32GB of memory space"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+do {
+    
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Please Make a Memory Size Selection in GB"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOS.mem = 4
+                }
+                '2'{
+                    $SOS.mem = 8
+                }
+                '3'{
+                    $SOS.mem = 12
+                }
+                '4'{
+                    $SOS.mem = 16
+                }
+                '5'{
+                    $SOS.mem = 20
+                }
+                '6'{
+                    $SOS.mem = 24
+                }
+                '7'{
+                    $SOS.mem = 32
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+        
+     
+        pause    
+    }
+    until($selection)    
+
+Clear-Host
+
+#'Input Desired Network Name for public access'
+
+Get-VirtualPortGroup | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter only after you have read the list of aviable Network Names"
+
+pause
+
+Write-Host "Please type in one of the following Network Names
+Note: If spelling is wrong VM will not connect properly"
+
+$SOS.netName = Read-Host -Prompt 'Input Desired Network Name for public access'
+
+#'Input Private Network Name (Communication Between Master and Sensor)'
+
+Get-VirtualPortGroup | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter only after you have read the list of aviable Network Names"
+
+pause
+
+Write-Host "Please type in one of the following Network Names
+Note: If spelling is wrong VM will not connect properly"
+
+$SOS.netName2 = Read-Host -Prompt 'Input Private Network Name (Communication Between Master and Sensor)'
+
+#'Input Desired IsoPath Example [datastore1]securityonion.iso'
+
+Get-Datastore | Sort-Object NAME | Select Name | Out-Host
+pause
+
+Write-Host "Please type in iso path. Example,["datastore name"]"iso name""
+
+$SOS.isoPaths = Read-Host -Prompt 'Input Desired IsoPath Example [datastore1]securityonion.iso'
+
+
+Write-Host 'You choose the names of '$SOS.toolName''
+Write-Host 'Watch Closely for Configuration Changes'
+Pause 5
+
+function Configuration-SO-Sensor(){
+    [imagereq]$SOS
+}
+
+#Create VM for Security Onion Master
+function Finalize-SO-Sensor(){
+New-VM -Name $SOS.toolName -Datastore $SOS.ds -DiskGB $SOS.disk -MemoryGB $SOS.mem -NumCpu $SOS.vcpu -NetworkName $SOS.netName
+
+#Attached CDDrive to SOS with Security Onion Image
+New-CDDrive -VM $SOS.toolName -IsoPath $SOS.isoPaths -StartConnected:$true -Confirm:$false
+
+#Attach 2nd Network Adapter
+New-NetworkAdapter -VM $SOS.toolName -NetworkName $SOS.netName2 -StartConnected:$true -Confirm:$false
+
+#Power On SOS
+Start-VM $SOS.toolName
+}
+
+function ReChoose-SOS-Variable(){
+$answers = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answers.ToCharArray() -icontains 'y'){
+        Finalize-SO-Sensor
+        pause
+        Write-Host "Security Onion Master build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-SO-Sensor
+    }
+
+    }
+
+
+Configuration-SO-Sensor
+pause
+
+ReChoose-SOS-Variable
+
+}
+
+<#
+
+
+
+
+#>
+
+Function Create-SO-StandAlone(){
+#Choose Name of Security Onion StandAlone and Choose Variables
+$SOMS.toolName = Read-Host -Prompt 'Input Name for Security Onion StandAlone'
+
+#Select Datastore
+Get-Datastore | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter after you have read the available list of Datastores."
+
+pause
+
+$SOMS.ds = Read-Host -Prompt 'Input Desired datastore name for StandAlone'
+
+#Set SOMSDiskDrive Variable
+Write-Host "Please select one of the following disk space sizes in GB"
+Write-Host "1: Press '1' for selection of 50GB of disk space"
+Write-Host "2: Press '2' for selection of 100GB of disk space"
+Write-Host "3: Press '3' for selection of 500GB of disk space"
+Write-Host "4: Press '4' for selection of 1000GB of disk space"
+Write-Host "5: Press '5' for selection of 2000GB of disk space"
+Write-Host "6: Press '6' for selection of 5000GB of disk space"
+Write-Host "7: Press '7' for selection of 10000GB of disk space"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+
+do {
+ 
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Make a Disk Size Selection for Security Onion StandAlone"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOMS.disk = 50
+                }
+                '2'{
+                    $SOMS.disk = 100
+                }
+                '3'{
+                    $SOMS.disk = 500
+                }
+                '4'{
+                    $SOMS.disk = 1000
+                }
+                '5'{
+                    $SOMS.disk = 2000
+                }
+                '6'{
+                    $SOMS.disk = 5000
+                }
+                '7'{
+                    $SOMS.disk = 10000
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+
+        pause    
+    }
+    until($selection)
+
+Clear-Host
+
+#$SOMSNumCpu = Read-Host -Prompt 'Input Desired CPUs for StandAlone Example 4'       
+Write-Host "Please select one of the following to choose how much CPU's you want."
+Write-Host "1: Press '1' for selection of 4 cpus"
+Write-Host "2: Press '2' for selection of 8 cpus"
+Write-Host "3: Press '3' for selection of 12 cpus"
+Write-Host "4: Press '4' for selection of 16 cpus"
+Write-Host "5: Press '5' for selection of 20 cpus"
+Write-Host "6: Press '6' for selection of 24 cpus"
+Write-Host "7: Press '7' for selection of 32 cpus"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+do {
+    
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Please CPU Size Selection"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOMS.vcpu = 4
+                }
+                '2'{
+                    $SOMS.vcpu = 8
+                }
+                '3'{
+                    $SOMS.vcpu = 12
+                }
+                '4'{
+                    $SOMS.vcpu = 16
+                }
+                '5'{
+                    $SOMS.vcpu = 20
+                }
+                '6'{
+                    $SOMS.vcpu = 24
+                }
+                '7'{
+                    $SOMS.vcpu = 32
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+        
+     
+        pause    
+    }
+    until($selection)
+
+Clear-Host
+
+#Select Memory Space
+Write-Host "Please select one of the following memory space sizes in GB"
+Write-Host "1: Press '1' for selection of 4GB of memory space"
+Write-Host "2: Press '2' for selection of 8GB of memory space"
+Write-Host "3: Press '3' for selection of 12GB of memory space"
+Write-Host "4: Press '4' for selection of 16GB of memory space"
+Write-Host "5: Press '5' for selection of 20GB of memory space"
+Write-Host "6: Press '6' for selection of 24GB of memory space"
+Write-Host "7: Press '7' for selection of 32GB of memory space"
+Write-Host "8: Press 'E' to Exit"
+Write-Host "Note, if you select incorrect option it will just prompt you again"
+do {
+    
+        do{
+                Try{
+        [ValidateRange(1,8)]$selection = Read-Host "Please Make a Memory Size Selection in GB"
+                }
+                Catch{}
+           }until($?)
+    
+         switch ($selection)
+             {
+                '1'{
+                    $SOMS.mem = 4
+                }
+                '2'{
+                    $SOMS.mem = 8
+                }
+                '3'{
+                    $SOMS.mem = 12
+                }
+                '4'{
+                    $SOMS.mem = 16
+                }
+                '5'{
+                    $SOMS.mem = 20
+                }
+                '6'{
+                    $SOMS.mem = 24
+                }
+                '7'{
+                    $SOMS.mem = 32
+                }
+                '8'{
+                    Exit
+                }
+        }
+        
+        
+     
+        pause    
+    }
+    until($selection)    
+
+Clear-Host
+
+#'Input Desired Network Name for public access'
+
+Get-VirtualPortGroup | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter only after you have read the list of aviable Network Names"
+
+pause
+
+Write-Host "Please type in one of the following Network Names
+Note: If spelling is wrong VM will not connect properly"
+
+$SOMS.netName = Read-Host -Prompt 'Input Desired Network Name for public access'
+
+#'Input Private Network Name (Communication Between StandAlone and Sensor)'
+
+Get-VirtualPortGroup | Sort-Object NAME | Select Name | Out-Host
+
+Write-Host "Press Enter only after you have read the list of aviable Network Names"
+
+pause
+
+Write-Host "Please type in one of the following Network Names
+Note: If spelling is wrong VM will not connect properly"
+
+$SOMS.netName2 = Read-Host -Prompt 'Input Private Network Name (Communication Between StandAlone and Sensor)'
+
+#'Input Desired IsoPath Example [datastore1]securityonion.iso'
+
+Get-Datastore | Sort-Object NAME | Select Name | Out-Host
+pause
+
+Write-Host "Please type in iso path. Example,["datastore name"]"iso name""
+
+$SOMS.isoPaths = Read-Host -Prompt 'Input Desired IsoPath Example [datastore1]securityonion.iso'
+
+
+Write-Host 'You choose the names of '$SOMS.toolName''
+Write-Host 'Watch Closely for Configuration Changes'
+Pause 5
+
+function Configuration-SO-StandAlone(){
+    [imagereq]$SOMS
+}
+
+#Create VM for Security Onion StandAlone
+function Finalize-SO-StandAlone(){
+New-VM -Name $SOMS.toolName -Datastore $SOMS.ds -DiskGB $SOMS.disk -MemoryGB $SOMS.mem -NumCpu $SOMS.vcpu -NetworkName $SOMS.netName
+
+#Attached CDDrive to SOMS with Security Onion Image
+New-CDDrive -VM $SOMS.toolName -IsoPath $SOMS.isoPaths -StartConnected:$true -Confirm:$false
+
+#Attach 2nd Network Adapter
+New-NetworkAdapter -VM $SOMS.toolName -NetworkName $SOMS.netName2 -StartConnected:$true -Confirm:$false
+
+#Power On SOMS
+Start-VM $SOMS.toolName
+}
+
+function ReChoose-SO-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-SO-StandAlone
+        pause
+        Write-Host "Security Onion StandAlone build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-SO-StandAlone
+    }
+
+    }
+
+
+Configuration-SO-StandAlone
+pause
+
+ReChoose-SO-Variable
+
+}
+
+Function Create-New-vSwitch(){
+    $vSwitch.vSwitch = Read-Host "Enter what you would like you vSwitch name to be."
+    Get-VMHostNetworkAdapter | Sort-Object Name | Select Name | Out-Host
+    Write-Host "Continue only after verifying which of the above Physical NICs you wish to use."
+    pause
+    $vSwitch.pNic = Read-Host "Enter which Physical Nic you wish to assign your vSwitch to."
+    Function Finalize-vSwitch(){
+    New-VirtualSwitch -Name $vSwitch.vSwitch -Nic $vSwitch.pNic -Confirm:$false
+    }
+    Function ReChoose-vSwitch-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-vSwitch-Private
+        pause
+        Write-Host "Network Resource build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-New-vSwitch
+    }
+
+    }
+    [NetSettings]$vSwitch
+    ReChoose-vSwitch-Variable
+}
+
+<#
+
+
+#>
+
+Function Create-Net-Private(){
+$private.pGroup = Read-Host "Enter what you would like you Virtual Port Group name to be."
+Get-VirtualSwitch | Sort-Object Name | Select Name | Out-Host
+$private.vSwitch = Read-Host "Enter what you would like you vSwitch name to be."
+$private.vlans = Read-Host "Enter what you would like you Virtual Port Group Vlan to be."
+Function Finalize-Net-Private(){
+New-VirtualPortGroup -Name $private.pGroup -VirtualSwitch $private.vSwitch -VLanId $private.vlans -Confirm:$false
+}
+Function ReChoose-Private-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-Net-Private
+        pause
+        Write-Host "Network Resource build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-Net-Private
+    }
+
+    }
+    [NetSettings]$private
+    pause
+    ReChoose-Private-Variable
+
+}
+
+<#
+
+#>
+Function Create-Net-Public(){
+$Public.pGroup = Read-Host "Enter what you would like you Virtual Port Group name to be."
+Get-VirtualSwitch | Sort-Object Name | Select Name | Out-Host
+$Public.vSwitch = Read-Host "Enter what you would like you vSwitch name to be."
+$Public.vlans = Read-Host "Enter what you would like you Virtual Port Group Vlan to be."
+Function Finalize-Net-Public(){
+New-VirtualPortGroup -Name $Public.pGroup -VirtualSwitch $Public.vSwitch -VLanId $Public.vlans -Confirm:$false
+}
+Function ReChoose-Public-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-Net-Public
+        pause
+        Write-Host "Network Resource build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-Net-Public
+    }
+
+    }
+    [NetSettings]$Public
+    pause
+    ReChoose-Public-Variable
+
+}
+
+<#
+
+#>
+Function Create-Net-Management(){
+$Management.pGroup = Read-Host "Enter what you would like you Virtual Port Group name to be."
+Get-VirtualSwitch | Sort-Object Name | Select Name | Out-Host
+$Management.vSwitch = Read-Host "Enter what you would like you vSwitch name to be."
+$Management.vlans = Read-Host "Enter what you would like you Virtual Port Group Vlan to be."
+Function Finalize-Net-Management(){
+New-VirtualPortGroup -Name $Management.pGroup -VirtualSwitch $Management.vSwitch -VLanId $Management.vlans -Confirm:$false
+}
+Function ReChoose-Management-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-Net-Management
+        pause
+        Write-Host "Network Resource build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-New-Management
+    }
+
+    }
+    [NetSettings]$Management
+    pause
+    ReChoose-Management-Variable
+
+}
+
+
+<#
+
+#>
+Function Create-Net-Sniffing(){
+$Sniffing.pGroup = Read-Host "Enter what you would like you Virtual Port Group name to be."
+Get-VirtualSwitch | Sort-Object Name | Select Name | Out-Host
+$Sniffing.vSwitch = Read-Host "Enter what you would like you vSwitch name to be."
+$Sniffing.vlans = Read-Host "Enter what you would like you Virtual Port Group Vlan to be."
+Function Finalize-Net-Sniffing(){
+New-VirtualPortGroup -Name $Sniffing.pGroup -VirtualSwitch $Sniffing.vSwitch -VLanId $Sniffing.vlans -Confirm:$false
+}
+Function ReChoose-Sniffing-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-Net-Sniffing
+        pause
+        Write-Host "Network Resource build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-Net-Sniffing
+    }
+
+    }
+    [NetSettings]$Sniffing
+    pause
+    ReChoose-Sniffing-Variable
+
+}
+
+<#
+
+#>
+Function Create-Net-Honey(){
+$Honey.pGroup = Read-Host "Enter what you would like you Virtual Port Group name to be."
+Get-VirtualSwitch | Sort-Object Name | Select Name | Out-Host
+$Honey.vSwitch = Read-Host "Enter what you would like you vSwitch name to be."
+$Honey.vlans = Read-Host "Enter what you would like you Virtual Port Group Vlan to be."
+Function Finalize-Net-Honey(){
+New-VirtualPortGroup -Name $Honey.pGroup -VirtualSwitch $Honey.vSwitch -VLanId $Honey.vlans -Confirm:$false
+}
+Function ReChoose-Honey-Variable(){
+$answer = Read-Host -Prompt "Do you agree with the following configurations?"
+
+
+    if($answer.ToCharArray() -icontains 'y'){
+        Finalize-Net-Honey
+        pause
+        Write-Host "Network Resource build is complete. Press enter to return to mainpage"
+        Get-MainPage
+    }
+    else{
+        Create-Net-Honey
+    }
+
+    }
+    [NetSettings]$Honey
+    pause
+    ReChoose-Honey-Variable
+
+}
